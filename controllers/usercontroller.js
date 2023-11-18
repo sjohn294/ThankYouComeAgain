@@ -58,22 +58,37 @@ module.exports= {
             res.status(500).json(error)
         }
     },
-    async addFriend (req,res){
+    async addFriend(req, res) {
         try {
-            const newFriend = await User.findOneAndUpdate({_id:req.params.userId},{$addToSet:{friends:req.body}},{new: true, runValidators: true});
-            if(!newFriend){return res.status(404).json({message: "friendship blocked"})};
-            res.json(newFriend)
+            // Assuming that `friends` is an array of ObjectId references to the User model
+            const newFriend = await User.findByIdAndUpdate(
+                req.params.userId,
+                { $addToSet: { friends: req.params.friendId } }, // Use $addToSet to prevent duplicates
+                { new: true, runValidators: true }
+            );
+            if (!newFriend) {
+                return res.status(404).json({ message: "User not found" });
+            }
+            res.json(newFriend);
         } catch (error) {
-            res.status(500).json(error)
+            res.status(500).json(error);
         }
     },
-    async deleteFriend(req, res){
-        try {
-            const newFriend = await User.findOneAndUpdate({_id:req.params.userId},{$pull:{friends:{friendId:req.params.friendId}}},{new: true, runValidators: true});
-            if(!newFriend){return res.status(404).json({message: "I guess the feelings mutual"})};
-            res.json(newFriend)
-        } catch (error) {
-            res.status(500).json(error)
+   
+async deleteFriend(req, res) {
+    try {
+        // Assuming that `friends` is an array of ObjectId references to the User model
+        const removedFriend = await User.findByIdAndUpdate(
+            req.params.userId,
+            { $pull: { friends: req.params.friendId } }, // Use $pull to remove the friend ID from the array
+            { new: true }
+        );
+        if (!removedFriend) {
+            return res.status(404).json({ message: "User not found or friend not found" });
         }
+        res.json(removedFriend);
+    } catch (error) {
+        res.status(500).json(error);
     }
+}
 }
